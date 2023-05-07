@@ -6,36 +6,53 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 
-##Apply Gaussian noise to a frame
-def noisy_gauss(frame, mean=0, std_dev=5):
-    var=std_dev**2
-    frame = np.array(frame/255, dtype=float)
-    noise = np.random.normal(mean, var ** 0.5, frame.shape)
-    out = frame + noise
-    if out.min() < 0:
-        low_clip = -1.
-    else:
-        low_clip = 0.
-    out = np.clip(out, low_clip, 1.0)
-    out = np.uint8(out*255)
-    return out
+def noisy_gauss(frame, mean=0, std_dev=20):
+    """
+    Add Gaussian noise to an image.
 
-###Apply Salt and Peper noise to a frame
-def noisy_sp(image, amount=0.1):
-    row, col, ch = image.shape
-    s_vs_p = 0.5
-    out = np.zeros_like(image)
-    # Salt mode
-    num_salt = np.ceil(amount * image.size * s_vs_p)
-    coords = [np.random.randint(0, i - 1, int(num_salt)) for i in image.shape]
-    out[coords] = 1
+    Parameters:
+    image (numpy.ndarray): The image to add noise to.
+    sigma (float): Standard deviation of the Gaussian distribution.
 
-    # Pepper mode
-    num_pepper = np.ceil(amount * image.size * (1. - s_vs_p))
-    coords = [np.random.randint(0, i - 1, int(num_pepper)) for i in image.shape]
-    out[coords] = 0
-    return out
+    Returns:
+    numpy.ndarray: The noisy image.
+    """
+    # Create a copy of the original image
+    noisy_image = np.copy(frame)
 
+    # Generate Gaussian noise with mean and standard deviation 
+    noise = np.random.normal(mean, std_dev, size=frame.shape)
+
+    # Add the noise to the image
+    noisy_image = noisy_image.astype(np.float32) + noise.astype(np.float32)
+
+    # Clip the pixel values to the valid range [0, 255]
+    noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
+
+    return noisy_image
+
+def noisy_sp(image, prob=0.1):
+    """
+        Add salt and pepper noise to an image.
+
+        Parameters:
+        image (numpy.ndarray): The image to add noise to.
+        prob (float): Probability of a pixel being either salt or pepper.
+
+        Returns:
+        numpy.ndarray: The noisy image.
+        """
+
+    noisy_image = np.copy(image)
+
+    # Generate a random matrix with the same shape as the image
+    random_matrix = np.random.uniform(0, 1, size=image.shape)
+
+    # Set the pixels to salt or pepper noise based on the probability
+    noisy_image[random_matrix < prob/2] = 0
+    noisy_image[random_matrix > 1 - prob/2] = 255
+
+    return noisy_image
 
 ###Add noise to video
 def add_noise_to_video(video_path, output_path, noise_type="gaussian"):

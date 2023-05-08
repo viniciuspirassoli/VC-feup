@@ -72,3 +72,68 @@ def apply_temporal_filter(video_path, output_path, window_size):
 
 def filtro_do_mano():
     return None
+
+import cv2
+import numpy as np
+
+def RBLT(input_filename, output_filename, alpha=1.0, beta=1.0/30, gamma=0.01, epsilon=0.01, d=15, sigma_color=75, sigma_space=75, m_estimator='charbonnier'):
+    # Load input video
+    cap = cv2.VideoCapture(input_filename)
+
+    # Initialize variables
+    prev_frame = None
+    filtered_frames = []
+
+    while True:
+        # Read the next frame from the video
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Convert the frame to grayscale
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Apply the filter to the current frame
+        if prev_frame is not None:
+            # Compute the spatial and temporal differences
+            dx = cv2.bilateralFilter(gray, d, sigma_color, sigma_space) - gray
+            dt = gray.astype(np.float32) - prev_frame.astype(np.float32)
+
+            # Compute the error norm and weight function
+            if m_estimator == 'charbonnier':
+                # Compute the Charbonnier error norm
+                e = np.sqrt(dx**2 + gamma**2) / epsilon
+
+                # Compute the M-estimator weight function
+                w = 1 / (e + 1)
+            elif m_estimator == 'geman-mcclure':
+                # Compute the Geman-McClure error norm
+                e = (dx**2 + gamma**2) / (epsilon**2 + dx**2 + gamma**2)
+
+                # Compute the M-estimator weight function
+                w = epsilon**2 / (e + epsilon**2)
+
+            # Apply the filter to the current frame
+            filtered = gray + alpha * w * dx + beta * w * dt
+
+            # Clip the filtered values to the range [0, 255]
+            filtered = np.clip(filtered, 0, 255)
+
+            # Convert the filtered frame back to uint8
+            filtered = filtered.astype(np.uint8)
+
+            # Add the filtered frame to the list of filtered frames
+            filtered_frames.append(filtered)
+
+        # Update the previous frame
+        prev_frame = gray
+
+    # Release the video capture object
+    cap.release()
+
+    # Save the filtered video
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_filename, fourcc, 30, (gray.shape[1], gray.shape[0]))
+    for frame in filtered_frames:
+        out.write(cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR))
+    out.release()

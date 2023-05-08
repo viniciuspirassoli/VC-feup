@@ -12,6 +12,7 @@ input_video="data/Saint_Barthelemy_2.mov"
 noisy_video = "results/noisy_video.mp4"
 bilateral_filtered="results/bilateral.mp4"
 temporal_filtered="results/temporal.mp4"
+RBLT_filtered="results/RBLT.mp4"
 
 noise_type = "gaussian"  # Choose between "gaussian" or "sp"
 
@@ -64,3 +65,6 @@ plt.show(block=False)
 
 if not os.path.exists(temporal_filtered):
     filters.bilateral_denoise_video(noisy_video, temporal_filtered)
+
+if not os.path.exists(RBLT_filtered):
+    filters.RBLT(noisy_video, RBLT_filtered)

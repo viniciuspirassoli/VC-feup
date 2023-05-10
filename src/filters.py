@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 # Apply bilateral filter to video
 def bilateral_denoise_video(input_path, output_path, d = 10, sigmaColor = 20, sigmaSpace = 30):
@@ -73,8 +74,74 @@ def apply_temporal_filter(video_path, output_path, window_size):
 def filtro_do_mano():
     return None
 
-import cv2
-import numpy as np
+def median_filter_to_video(input_path,output_path, window_size=3):
+    # Open the video file
+    cap = cv2.VideoCapture(input_path)
+
+    # Get the frame width and height
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Create a VideoWriter object to write the output video
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height), isColor=True)
+
+    # Read the first frame
+    ret, frame = cap.read()
+
+    # Apply median filter to each frame and write it to the output video
+    while ret:
+        # Apply median filter
+        frame_filtered = cv2.medianBlur(frame, window_size)
+
+        # Write the filtered frame to the output video
+        out.write(frame_filtered)
+
+        # Read the next frame
+        ret, frame = cap.read()
+
+    # Release the VideoCapture and VideoWriter objects
+    cap.release()
+    out.release()
+
+    # Print a message when the filtering is done
+    print('Median filter applied to the video!')
+
+
+def apply_gaussian_filter_to_video(input_path, output_path, kernel_size=5, sigmaX=1):
+    # Open the video file
+    cap = cv2.VideoCapture(input_path)
+
+    # Get the frame width and height
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Create a VideoWriter object to write the output video
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height), isColor=True)
+
+    # Read the first frame
+    ret, frame = cap.read()
+
+    # Apply Gaussian filter to each frame and write it to the output video
+    while ret:
+        # Apply Gaussian filter
+        frame_filtered = cv2.GaussianBlur(frame, (kernel_size, kernel_size), sigmaX)
+
+        # Write the filtered frame to the output video
+        out.write(frame_filtered)
+
+        # Read the next frame
+        ret, frame = cap.read()
+
+    # Release the VideoCapture and VideoWriter objects
+    cap.release()
+    out.release()
+
+    # Print a message when the filtering is done
+    print('Gaussian filter applied to the video!')
+
+
 
 def RBLT(input_filename, output_filename, alpha=1.0, beta=1.0/30, gamma=0.01, epsilon=0.01, d=15, sigma_color=75, sigma_space=75, m_estimator='charbonnier'):
     # Load input video

@@ -7,7 +7,6 @@ import noise
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-
 input_video="data/Saint_Barthelemy_2.mov"
 noisy_video = "results/noisy_video.mp4"
 bilateral_filtered="results/bilateral.mp4"
@@ -32,7 +31,7 @@ plt.xlabel("Frame")
 plt.ylabel("PSNR")
 plt.title("PSNR Variation over Time")
 plt.grid(True)
-plt.show(block=True)
+plt.show(block=False)
 
 # Calculate SSIM
 if not os.path.exists("results/ssim_values_noisy.txt"):
@@ -74,6 +73,4 @@ if not os.path.exists(median_filtered):
 if not os.path.exists(gaussian_filtered):
     filters.gaussian_filter_to_video(noisy_video, gaussian_filtered)    
 
-if not os.path.exists(RBLT_filtered):
-    filters.RBLT(noisy_video, RBLT_filtered)
-
+filters.RBLT_filter(noisy_video, RBLT_filtered)

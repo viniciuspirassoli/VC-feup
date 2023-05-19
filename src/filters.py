@@ -374,3 +374,52 @@ def RBLT(input_filename, output_filename, alpha=1.0, beta=1.0/30, gamma=0.01, ep
     for frame in filtered_frames:
         out.write(cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR))
     out.release()
+
+
+
+
+
+def bilateral_filter(image, diameter, sigma_color, sigma_space):
+    "Chat GPT's implementation without using bilateral in opencv"
+    # Convert image to grayscale if it's colored
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Create a padded version of the image for filtering
+    padded_image = cv2.copyMakeBorder(image, diameter // 2, diameter // 2, diameter // 2, diameter // 2, cv2.BORDER_REFLECT)
+
+    # Create a meshgrid of coordinates
+    x, y = np.meshgrid(np.arange(-diameter // 2, diameter // 2 + 1), np.arange(-diameter // 2, diameter // 2 + 1))
+
+    # Compute the spatial Gaussian component
+    spatial_component = np.exp(-(x ** 2 + y ** 2) / (2 * sigma_space ** 2))
+
+    # Initialize the filtered image
+    filtered_image = np.zeros_like(image, dtype=np.float32)
+
+    # Apply bilateral filtering
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            # Extract the local region
+            region = padded_image[i:i + diameter, j:j + diameter]
+
+            # Compute the intensity Gaussian component
+            intensity_diff = region - image[i, j]
+            intensity_component = np.exp(-(intensity_diff ** 2) / (2 * sigma_color ** 2))
+
+            # Compute the bilateral filter response
+            response = intensity_component * spatial_component
+
+            # Normalize the response
+            normalized_response = response / np.sum(response)
+
+            # Compute the filtered pixel value
+            filtered_pixel = np.sum(normalized_response * region)
+
+            # Assign the filtered value to the output image
+            filtered_image[i, j] = filtered_pixel
+
+    # Convert the filtered image back to the original data type
+    filtered_image = filtered_image.astype(image.dtype)
+
+    return filtered_image

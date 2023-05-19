@@ -1,5 +1,17 @@
 import numpy as np
 
+CHARBONNIER = 0
+GEMAN_MCCLURE = 1
+
+def gaussian_kernel(d, sigma:int = 1):
+    """
+    Generates a d x d Gaussian kernel with standard deviation sigma.
+    """
+    k = (d-1)//2
+    x, y = np.meshgrid(np.arange(-k, k+1), np.arange(-k, k+1))
+    kernel = np.exp(-(x**2 + y**2) / (2 * sigma**2))
+    return kernel / np.sum(kernel)
+
 def charbonnier(err, beta = 1):
     return 1/(np.sqrt(1+(err*err)/(beta*beta)))
 

@@ -169,3 +169,45 @@ def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, sigma: float = 1
     cap.release()
     out.release()  
 
+def rgb_to_ycbcr(input_path, output_path):
+
+    video = cv2.VideoCapture(input_path)
+
+    fps = video.get(cv2.CAP_PROP_FPS)
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height), isColor=True)
+
+    while True:
+        ret, frame = video.read()
+        if not ret:
+            break
+
+        ycbcr_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YCrCb)
+        out.write(ycbcr_frame)
+
+    video.release()
+    out.release()
+
+def ycbcr_to_rgb(input_path, output_path):
+    video = cv2.VideoCapture(input_path)
+
+    fps = video.get(cv2.CAP_PROP_FPS)
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height), isColor=True)
+
+    while True:
+        ret, frame = video.read()
+        if not ret:
+            break
+
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_YCrCb2RGB)
+        out.write(rgb_frame)
+
+    video.release()
+    out.release()

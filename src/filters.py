@@ -137,7 +137,7 @@ def gaussian_filter_to_video(input_path, output_path, kernel_size=5, sigmaX=1):
     cap.release()
     out.release()
             
-def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, sigma: float = 1.0, timeWindowSize: int = 5):
+def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, spaceSigma: float = 1.0, beta: float = 1.0, timeWindowSize: int = 5, timeSigma: float = 1.0):
     startTime = time.time()
     cap = cv2.VideoCapture(inPath)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -145,27 +145,100 @@ def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, sigma: float = 1
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(outPath, fourcc, 30.0, (width, height), isColor=True)
     borderSize = int((spatialKernelSize-1)/2)
-    gaussKernel = np.array(m.gaussianKernel(spatialKernelSize, sigma)) #3-channel gaussian kernel
+    gaussKernel = np.array(m.gaussianKernel(spatialKernelSize, spaceSigma)) #3-channel gaussian kernel
+    
+    # frameBuffer = np.zeros((timeWindowSize, height, width, 3), dtype=np.uint8)
+    frameBuffer = []
+    timeMult = m.timeArray(timeWindowSize, timeSigma, beta)/2
+    print(timeMult)
     ret, frame = cap.read()
-    # print("border size: " + str(borderSize))
-    while ret:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCR_CB)
-        bordered_frame = cv2.copyMakeBorder(frame, borderSize, borderSize, borderSize, borderSize, borderType=cv2.BORDER_REFLECT_101)
-
-        for y in range(borderSize, bordered_frame.shape[1]-borderSize):
-            for x in range(borderSize, bordered_frame.shape[0]-borderSize):
-                # print("x: "+str(x)+" y: "+str(y))
-                roi = np.array(bordered_frame[x-borderSize:x+borderSize+1, y-borderSize:y+borderSize+1])
-                # print(roi.shape)
-                kernel = np.array(m.charbonnier(roi - bordered_frame[x, y])) * gaussKernel
-                kernel /= np.sum(kernel, axis=(0, 1))
-                frame[x-borderSize, y-borderSize] = np.sum(roi * kernel, axis=(0, 1))
-
-        frame = cv2.cvtColor(frame, cv2.COLOR_YCR_CB2BGR)
-        out.write(frame)
+    while len(frameBuffer) < timeWindowSize:
+        if not ret:
+            break
+        frameBuffer.insert(0, frame)
         ret, frame = cap.read()
-        
+
+    intensities = np.zeros((timeWindowSize, 3), dtype=np.uint8)
+    #while ret:
+    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCR_CB)
+    # frameCopy = cv2.copyTo(frame, mask=None)
+    frameBuffer.insert(0, frame)
+    borderedFrame = cv2.copyMakeBorder(frame, borderSize, borderSize, borderSize, borderSize, borderType=cv2.BORDER_REFLECT_101)
+    
+    for y in range(borderSize, borderedFrame.shape[1]-borderSize):
+        for x in range(borderSize, borderedFrame.shape[0]-borderSize):
+            roi = np.array(borderedFrame[x-borderSize:x+borderSize+1, y-borderSize:y+borderSize+1])
+            kernel = np.array(m.charbonnier(roi - borderedFrame[x, y], beta)) * gaussKernel
+            kernel /= 2*np.sum(kernel, axis=(0, 1))
+            # frame[x-borderSize, y-borderSize] = np.uint8(np.sum(roi * kernel, axis=(0, 1)) / 2)
+            # frame[x-borderSize, y-borderSize] += np.uint8(np.sum(frameBuffer[:, x-borderSize, y-borderSize] * timeMult))
+            for i in range(1, timeWindowSize):
+                intensities[i-1] = frameBuffer[i][x-borderSize, y-borderSize]
+            if any((np.sum(roi * kernel, axis=(0, 1)) + np.sum(intensities*timeMult)) > 255):
+                print("WARNING")
+            frame[x-borderSize, y-borderSize] = np.uint8(np.sum(roi * kernel, axis=(0, 1)) + np.sum(intensities*timeMult))
+
+    frameBuffer.pop(-1)
+    # out.write(frame)
+    # ret, frame = cap.read()
     print(time.time()-startTime)
+    cv2.imshow("frame",frame)
+    cv2.waitKey(0)
+    
     cap.release()
     out.release()  
 
+
+def rgb_to_ycbcr(video_path):
+    # Open the video file
+    video = cv2.VideoCapture(video_path)
+
+    # Get video properties
+    fps = video.get(cv2.CAP_PROP_FPS)
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Create a VideoWriter object to save the converted video
+    ycbcr_video = cv2.VideoWriter('ycbcr_video.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (width, height), False)
+
+    while True:
+        ret, frame = video.read()
+        if not ret:
+            break
+
+        # Convert frame from RGB to YCBCR
+        ycbcr_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YCrCb)
+
+        # Write the converted frame to the new video file
+        ycbcr_video.write(ycbcr_frame)
+
+    # Release video objects
+    video.release()
+    ycbcr_video.release()
+
+def ycbcr_to_rgb(video_path):
+    # Open the video file
+    video = cv2.VideoCapture(video_path)
+
+    # Get video properties
+    fps = video.get(cv2.CAP_PROP_FPS)
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Create a VideoWriter object to save the converted video
+    rgb_video = cv2.VideoWriter('rgb_video.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (width, height), True)
+
+    while True:
+        ret, frame = video.read()
+        if not ret:
+            break
+
+        # Convert frame from YCBCR to RGB
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_YCrCb2RGB)
+
+        # Write the converted frame to the new video file
+        rgb_video.write(rgb_frame)
+
+    # Release video objects
+    video.release()
+    rgb_video.release()

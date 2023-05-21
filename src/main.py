@@ -84,7 +84,7 @@ if not os.path.exists(bilateral_filtered):
     filters.bilateral_denoise_video(noisy_video, bilateral_filtered)
 
 if not os.path.exists(RBLT_filtered):
-    filters.RBLT_filter(noisy_video, RBLT_filtered)
+    filters.RBLT(noisy_video, RBLT_filtered)
 
 
 #Metrics
@@ -183,15 +183,4 @@ if not os.path.exists("results/ssim_values_rblt.txt"):
 else:
     ssim_values_rblt = np.loadtxt("results/ssim_values_rblt.txt")
 
-
-video = cv2.VideoCapture(noisy_video)
-_, img = video.read()
-
-before = time.time()
-result = filters.rbl(img,3)
-print('finished in ' + str(time.time()-before) + 'seconds')
-cv2.imshow('amogus', result)
-cv2.waitKey(0)
-# if cv2.waitKey(0) == ord('q'):
-#     cv2.destroyAllWindows()
-#     exit()
+filters.RBLT(noisy_video, RBLT_filtered)

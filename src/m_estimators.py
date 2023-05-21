@@ -12,7 +12,7 @@ def gaussian_kernel(d, sigma:int = 1):
     kernel = np.exp(-(x**2 + y**2) / (2 * sigma**2))
     return kernel / np.sum(kernel)
 
-def charbonnier(err, beta = 1):
+def charbonnier(err, beta: float = 1):
     return 1/(np.sqrt(1+(err*err)/(beta*beta)))
 
 def gaussian(x, sigma):
@@ -34,3 +34,15 @@ def gaussianKernel(n: int, sigma: float):
     kernel3D[..., 2] = kernel2D 
 
     return kernel3D
+
+def timeArray(n: int, sigma: float, beta: float):
+    array1D = np.linspace(0, n, n)
+    array1D = np.exp(-(array1D**2) / (2 * sigma**2))*charbonnier(array1D, beta)
+    array1D /= np.sum(array1D)
+
+    array2D = np.zeros((n, 3))
+    array2D[..., 0] = array1D
+    array2D[..., 1] = array1D
+    array2D[..., 2] = array1D
+    return array2D
+    

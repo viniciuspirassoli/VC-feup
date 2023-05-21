@@ -188,57 +188,45 @@ def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, spaceSigma: floa
     cap.release()
     out.release()  
 
+def rgb_to_ycbcr(input_path, output_path):
 
-def rgb_to_ycbcr(video_path):
-    # Open the video file
-    video = cv2.VideoCapture(video_path)
+    video = cv2.VideoCapture(input_path)
 
-    # Get video properties
     fps = video.get(cv2.CAP_PROP_FPS)
     width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # Create a VideoWriter object to save the converted video
-    ycbcr_video = cv2.VideoWriter('ycbcr_video.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (width, height), False)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height), isColor=True)
 
     while True:
         ret, frame = video.read()
         if not ret:
             break
 
-        # Convert frame from RGB to YCBCR
         ycbcr_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2YCrCb)
+        out.write(ycbcr_frame)
 
-        # Write the converted frame to the new video file
-        ycbcr_video.write(ycbcr_frame)
-
-    # Release video objects
     video.release()
-    ycbcr_video.release()
+    out.release()
 
-def ycbcr_to_rgb(video_path):
-    # Open the video file
-    video = cv2.VideoCapture(video_path)
+def ycbcr_to_rgb(input_path, output_path):
+    video = cv2.VideoCapture(input_path)
 
-    # Get video properties
     fps = video.get(cv2.CAP_PROP_FPS)
     width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # Create a VideoWriter object to save the converted video
-    rgb_video = cv2.VideoWriter('rgb_video.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (width, height), True)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height), isColor=True)
 
     while True:
         ret, frame = video.read()
         if not ret:
             break
 
-        # Convert frame from YCBCR to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_YCrCb2RGB)
+        out.write(rgb_frame)
 
-        # Write the converted frame to the new video file
-        rgb_video.write(rgb_frame)
-
-    # Release video objects
     video.release()
-    rgb_video.release()
+    out.release()

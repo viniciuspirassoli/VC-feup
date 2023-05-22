@@ -80,10 +80,6 @@ def add_noise_to_video(video_path, output_path, noise_type="gaussian"):
         # Write noisy frame to output video
         output_video.write(noisy_frame)
 
-        cv2.imshow('Noisy Video', noisy_frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
     # Release resources
     video_capture.release()
     output_video.release()

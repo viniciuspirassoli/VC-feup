@@ -4,7 +4,7 @@ import m_estimators as m
 import time
 
 # Apply bilateral filter to video
-def bilateral_denoise_video(input_path, output_path, d = 10, sigmaColor = 20, sigmaSpace = 30):
+def bilateral(input_path, output_path, d = 10, sigmaColor = 20, sigmaSpace = 30):
     # Open the video file
     video = cv2.VideoCapture(input_path)
 
@@ -29,11 +29,6 @@ def bilateral_denoise_video(input_path, output_path, d = 10, sigmaColor = 20, si
         # Write the denoised frame to the output video
         output.write(denoised_frame)
 
-        # Display the denoised frame
-        cv2.imshow('Denoised Frame', denoised_frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
     # Release the video capture and writer objects
     video.release()
     output.release()
@@ -42,7 +37,7 @@ def bilateral_denoise_video(input_path, output_path, d = 10, sigmaColor = 20, si
     cv2.destroyAllWindows()
 
 #Appy temporal filter to video
-def apply_temporal_filter(video_path, output_path, window_size):
+def temporal(video_path, output_path, window_size):
     cap = cv2.VideoCapture(video_path)
 
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -63,17 +58,13 @@ def apply_temporal_filter(video_path, output_path, window_size):
         
         if len(frames) == window_size:
             filtered_frame = cv2.medianBlur(frames[window_size // 2], window_size)
-            cv2.imshow("Filtered Frame", filtered_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        output.write(filtered_frame)
+            output.write(filtered_frame)
     
     output.release()
     cap.release()
     cv2.destroyAllWindows()
 
-def median_filter_to_video(input_path,output_path, window_size=3):
+def median(input_path,output_path, window_size=3):
     # Open the video file
     cap = cv2.VideoCapture(input_path)
 
@@ -103,11 +94,8 @@ def median_filter_to_video(input_path,output_path, window_size=3):
     cap.release()
     out.release()
 
-    # Print a message when the filtering is done
-    print('Median filter applied to the video!')
 
-
-def gaussian_filter_to_video(input_path, output_path, kernel_size=5, sigmaX=1):
+def gaussian(input_path, output_path, kernel_size=5, sigmaX=1):
     # Open the video file
     cap = cv2.VideoCapture(input_path)
 
@@ -136,54 +124,62 @@ def gaussian_filter_to_video(input_path, output_path, kernel_size=5, sigmaX=1):
     # Release the VideoCapture and VideoWriter objects
     cap.release()
     out.release()
-            
+
+def createBuffer(bufferSize: int, height: int, width: int):
+    buffer = np.zeros((bufferSize, height, width, 3), dtype=np.uint8)
+
+    def addToBuffer(frame):
+        nonlocal buffer
+        buffer = np.roll(buffer, 1, axis=0)
+        buffer[0] = frame
+    
+    def getBuffer():
+        return buffer
+
+    return addToBuffer, getBuffer 
+
 def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, spaceSigma: float = 1.0, beta: float = 1.0, timeWindowSize: int = 5, timeSigma: float = 1.0):
     startTime = time.time()
     cap = cv2.VideoCapture(inPath)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(outPath, fourcc, 30.0, (width, height), isColor=True)
+    out = cv2.VideoWriter(outPath, fourcc, 30.0, (width, height))
     borderSize = int((spatialKernelSize-1)/2)
     gaussKernel = np.array(m.gaussianKernel(spatialKernelSize, spaceSigma)) #3-channel gaussian kernel
     
-    # frameBuffer = np.zeros((timeWindowSize, height, width, 3), dtype=np.uint8)
-    frameBuffer = []
-    timeMult = m.timeArray(timeWindowSize, timeSigma, beta)/2
-    print(timeMult)
+    addToBuffer, getBuffer = createBuffer(timeWindowSize, height, width)
+    timeMult = m.timeArray(timeWindowSize, timeSigma, beta)
     ret, frame = cap.read()
-    while len(frameBuffer) < timeWindowSize:
+
+    for i in range(timeWindowSize):
         if not ret:
             break
-        frameBuffer.insert(0, frame)
+        addToBuffer(frame)
         ret, frame = cap.read()
 
-    intensities = np.zeros((timeWindowSize, 3), dtype=np.uint8)
-    #while ret:
-    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2YCR_CB)
-    # frameCopy = cv2.copyTo(frame, mask=None)
-    frameBuffer.insert(0, frame)
-    borderedFrame = cv2.copyMakeBorder(frame, borderSize, borderSize, borderSize, borderSize, borderType=cv2.BORDER_REFLECT_101)
-    
-    for y in range(borderSize, borderedFrame.shape[1]-borderSize):
-        for x in range(borderSize, borderedFrame.shape[0]-borderSize):
-            roi = np.array(borderedFrame[x-borderSize:x+borderSize+1, y-borderSize:y+borderSize+1])
-            kernel = np.array(m.charbonnier(roi - borderedFrame[x, y], beta)) * gaussKernel
-            kernel /= 2*np.sum(kernel, axis=(0, 1))
-            # frame[x-borderSize, y-borderSize] = np.uint8(np.sum(roi * kernel, axis=(0, 1)) / 2)
-            # frame[x-borderSize, y-borderSize] += np.uint8(np.sum(frameBuffer[:, x-borderSize, y-borderSize] * timeMult))
-            for i in range(1, timeWindowSize):
-                intensities[i-1] = frameBuffer[i][x-borderSize, y-borderSize]
-            if any((np.sum(roi * kernel, axis=(0, 1)) + np.sum(intensities*timeMult)) > 255):
-                print("WARNING")
-            frame[x-borderSize, y-borderSize] = np.uint8(np.sum(roi * kernel, axis=(0, 1)) + np.sum(intensities*timeMult))
+    counter = 0
+    while ret and counter < 6:
+        frameCopy = cv2.copyTo(frame, mask=None)
+        borderedFrame = cv2.copyMakeBorder(frame, borderSize, borderSize, borderSize, borderSize, borderType=cv2.BORDER_REFLECT_101)
+        
+        for y in range(borderSize, borderedFrame.shape[1]-borderSize):
+            for x in range(borderSize, borderedFrame.shape[0]-borderSize):
+                roi = np.array(borderedFrame[x-borderSize:x+borderSize+1, y-borderSize:y+borderSize+1])
+                kernel = np.array(m.charbonnier(roi - borderedFrame[x, y], beta)) * gaussKernel
+                kernel /= np.sum(kernel, axis=(0, 1))
+                spatialContrib = np.sum(roi * kernel, axis=(0, 1))
+                temporalContrib = np.sum(getBuffer()[:, x-borderSize, y-borderSize]*timeMult, axis=0)
+                frame[x-borderSize, y-borderSize] = np.uint8(spatialContrib/2 + temporalContrib/2)
 
-    frameBuffer.pop(-1)
-    # out.write(frame)
-    # ret, frame = cap.read()
+        addToBuffer(frameCopy)
+        out.write(frame)
+        ret, frame = cap.read()
+        counter += 1
+
     print(time.time()-startTime)
-    cv2.imshow("frame",frame)
-    cv2.waitKey(0)
+    # cv2.imshow("frame",frame)
+    # cv2.waitKey(0)
     
     cap.release()
     out.release()  

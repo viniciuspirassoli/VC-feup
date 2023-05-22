@@ -24,67 +24,22 @@ noise_type = "gaussian"  # Choose between "gaussian" or "sp"
 if not os.path.exists(noisy_video):
     noise.add_noise_to_video(input_video,noisy_video, noise_type)
 
-# Calculate PSNR
-psnr_values, avg_psnr = metrics.calculate_psnr(noisy_video, input_video)
-print("Average PSNR:", avg_psnr)
 
-# Plotting
-# frame_indices = np.arange(len(psnr_values))
-# plt.plot(frame_indices, psnr_values)
-# plt.xlabel("Frame")
-# plt.ylabel("PSNR")
-# plt.title("PSNR Variation over Time")
-# plt.grid(True)
-# plt.show(block=False)
-
-# Calculate SSIM
-if not os.path.exists("results/ssim_values_noisy.txt"):
-    ssim_values_noisy = np.array(metrics.calculate_video_ssim(noisy_video, input_video))
-    np.savetxt("results/ssim_values_noisy.txt", ssim_values_noisy)
-else:
-    ssim_values_noisy = np.loadtxt("results/ssim_values_noisy.txt")
-
-# Plotting SSIM values
-# frame_numbers = np.arange(len(ssim_values_noisy))
-# plt.plot(frame_numbers, ssim_values_noisy)
-# plt.xlabel('Frame')
-# plt.ylabel('SSIM')
-# plt.title('SSIM Values')
-# plt.show(block=False)
-
-if not os.path.exists(bilateral_filtered):
-    filters.bilateral_denoise_video(noisy_video, bilateral_filtered)
-
-if not os.path.exists("results/ssim_values_bf.txt"):
-    ssim_values_bf = np.array(metrics.calculate_video_ssim(bilateral_filtered, input_video))
-    np.savetxt("results/ssim_values_bf.txt", ssim_values_bf)
-else:
-    ssim_values_bf = np.loadtxt("results/ssim_values_bf.txt")
-
-# frame_numbers = np.arange(len(ssim_values_bf))
-# plt.plot(frame_numbers, ssim_values_bf)
-# plt.xlabel('Frame')
-# plt.ylabel('SSIM')
-# plt.title('SSIM Values')
-# plt.show(block=False)
-
-if not os.path.exists(temporal_filtered):
-    filters.bilateral_denoise_video(noisy_video, temporal_filtered)
-
+# Apply filters
 if not os.path.exists(median_filtered):
-    filters.median_filter_to_video(noisy_video, median_filtered)
+    filters.median(noisy_video, median_filtered)
 
 if not os.path.exists(gaussian_filtered):
-    filters.gaussian_filter_to_video(noisy_video, gaussian_filtered) 
+    filters.gaussian(noisy_video, gaussian_filtered) 
 
 if not os.path.exists(temporal_filtered):
-    filters.apply_temporal_filter(noisy_video, temporal_filtered)   
+    filters.temporal(noisy_video, temporal_filtered, 5)   
 
 if not os.path.exists(bilateral_filtered):
-    filters.bilateral_denoise_video(noisy_video, bilateral_filtered)
+    filters.bilateral(noisy_video, bilateral_filtered)
 
 if not os.path.exists(RBLT_filtered):
-    filters.RBLT(noisy_video, RBLT_filtered)
+    filters.RBLT(noisy_video, RBLT_filtered, timeSigma = 0.5)
 
 
 #Metrics
@@ -96,6 +51,7 @@ if not os.path.exists("results/psnr_values_noisy.txt"):
     np.savetxt("results/psnr_values_noisy.txt", psnr_values_noisy)
 else:
     psnr_values_noisy = np.loadtxt("results/psnr_values_noisy.txt")
+    avg_psnr_noisy = np.average(psnr_values_noisy)
 
     #SSIM
 if not os.path.exists("results/ssim_values_noisy.txt"):
@@ -103,6 +59,7 @@ if not os.path.exists("results/ssim_values_noisy.txt"):
     np.savetxt("results/ssim_values_noisy.txt", ssim_values_noisy)
 else:
     ssim_values_noisy = np.loadtxt("results/ssim_values_noisy.txt")
+    avg_ssim_noisy = np.average(ssim_values_noisy)
 
 
 #Median 
@@ -113,6 +70,8 @@ if not os.path.exists("results/psnr_values_median.txt"):
     np.savetxt("results/psnr_values_median.txt", psnr_values_median)
 else:
     psnr_values_median = np.loadtxt("results/psnr_values_median.txt")
+    avg_psnr_median = np.average(psnr_values_median)
+
 
     #SSIM
 if not os.path.exists("results/ssim_values_median.txt"):
@@ -120,6 +79,7 @@ if not os.path.exists("results/ssim_values_median.txt"):
     np.savetxt("results/ssim_values_median.txt", ssim_values_median)
 else:
     ssim_values_median = np.loadtxt("results/ssim_values_median.txt")
+    avg_ssim_median = np.average(ssim_values_median)
 
 
 #Gauss
@@ -130,6 +90,7 @@ if not os.path.exists("results/psnr_values_gaussian.txt"):
     np.savetxt("results/psnr_values_gaussian.txt", psnr_values_gaussian)
 else:
     psnr_values_gaussian = np.loadtxt("results/psnr_values_gaussian.txt")
+    avg_psnr_gaussian = np.average(psnr_values_gaussian)
 
     #SSIM
 if not os.path.exists("results/ssim_values_gaussian.txt"):
@@ -137,6 +98,7 @@ if not os.path.exists("results/ssim_values_gaussian.txt"):
     np.savetxt("results/ssim_values_gaussian.txt", ssim_values_gaussian)
 else:
     ssim_values_gaussian = np.loadtxt("results/ssim_values_gaussian.txt")
+    avg_ssim_gaussian = np.average(ssim_values_gaussian)
 
 #Temp
     #PSNR
@@ -145,6 +107,7 @@ if not os.path.exists("results/psnr_values_temporal.txt"):
     np.savetxt("results/psnr_values_temporal.txt", psnr_values_temporal)
 else:
     psnr_values_temporal = np.loadtxt("results/psnr_values_temporal.txt")
+    avg_psnr_temporal = np.average(psnr_values_temporal)
 
     #SSIM
 if not os.path.exists("results/ssim_values_temporal.txt"):
@@ -152,6 +115,7 @@ if not os.path.exists("results/ssim_values_temporal.txt"):
     np.savetxt("results/ssim_values_temporal.txt", ssim_values_temporal)
 else:
     ssim_values_temporal = np.loadtxt("results/ssim_values_temporal.txt")
+    avg_ssim_temporal = np.average(ssim_values_temporal)
 
 #Bilat
     #PSNR
@@ -160,6 +124,7 @@ if not os.path.exists("results/psnr_values_bilateral.txt"):
     np.savetxt("results/psnr_values_bilateral.txt", psnr_values_bilateral)
 else:
     psnr_values_bilateral = np.loadtxt("results/psnr_values_bilateral.txt")
+    avg_psnr_bilateral = np.average(psnr_values_bilateral)
 
     #SSIM
 if not os.path.exists("results/ssim_values_bilateral.txt"):
@@ -167,6 +132,7 @@ if not os.path.exists("results/ssim_values_bilateral.txt"):
     np.savetxt("results/ssim_values_bilateral.txt", ssim_values_bilateral)
 else:
     ssim_values_bilateral= np.loadtxt("results/ssim_values_bilateral.txt")
+    avg_ssim_bilateral = np.average(ssim_values_bilateral)
 
 #RBLT
     #PSNR
@@ -175,6 +141,7 @@ if not os.path.exists("results/psnr_values_rblt.txt"):
     np.savetxt("results/psnr_values_rblt.txt", psnr_values_rblt)
 else:
     psnr_values_rblt = np.loadtxt("results/psnr_values_rblt.txt")
+    avg_psnr_rblt = np.average(psnr_values_rblt)
 
     #SSIM
 if not os.path.exists("results/ssim_values_rblt.txt"):
@@ -182,5 +149,4 @@ if not os.path.exists("results/ssim_values_rblt.txt"):
     np.savetxt("results/ssim_values_rblt.txt", ssim_values_rblt)
 else:
     ssim_values_rblt = np.loadtxt("results/ssim_values_rblt.txt")
-
-filters.RBLT(noisy_video, RBLT_filtered)
+    avg_ssim_bilateral = np.average(ssim_values_bilateral)

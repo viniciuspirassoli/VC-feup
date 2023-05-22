@@ -55,17 +55,14 @@ def calculate_ssim(video_path, reference_path):
     num_frames = int(cap_video.get(cv2.CAP_PROP_FRAME_COUNT))
     ssim_values = []
 
-    for _ in range(num_frames):
+    for i in range(num_frames):
         ret_video, frame_video = cap_video.read()
         ret_reference, frame_reference = cap_reference.read()
 
         if not (ret_video and ret_reference):
             break
-
-        frame_video = cv2.cvtColor(frame_video, cv2.COLOR_BGR2GRAY)
-        frame_reference = cv2.cvtColor(frame_reference, cv2.COLOR_BGR2GRAY)
-
-        ssim_value = ssim(frame_video, frame_reference, multichannel=True)
+        
+        ssim_value = ssim(cv2.cvtColor(frame_video, cv2.COLOR_BGR2GRAY), cv2.cvtColor(frame_reference, cv2.COLOR_BGR2GRAY))
         ssim_values.append(ssim_value)
 
     cap_video.release()

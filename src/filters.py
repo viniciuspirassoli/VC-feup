@@ -158,8 +158,7 @@ def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, spaceSigma: floa
         addToBuffer(frame)
         ret, frame = cap.read()
 
-    counter = 0
-    while ret and counter < 6:
+    while ret:
         frameCopy = cv2.copyTo(frame, mask=None)
         borderedFrame = cv2.copyMakeBorder(frame, borderSize, borderSize, borderSize, borderSize, borderType=cv2.BORDER_REFLECT_101)
         
@@ -175,8 +174,7 @@ def RBLT(inPath: str, outPath: str, spatialKernelSize: int = 3, spaceSigma: floa
         addToBuffer(frameCopy)
         out.write(frame)
         ret, frame = cap.read()
-        counter += 1
-
+        
     print(time.time()-startTime)
     # cv2.imshow("frame",frame)
     # cv2.waitKey(0)
